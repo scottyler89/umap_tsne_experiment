@@ -1,0 +1,6 @@
+seaborn
+umap-learn
+numpy
+matplotlib
+scikit-learn
+scikit-dimension
