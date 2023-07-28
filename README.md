@@ -1,4 +1,5 @@
-# Do tSNE and UMAP overfit their intrinsic dimensionality (Yes)
+# Do tSNE and UMAP overfit their intrinsic dimensionality
+## (The answer, unfortuantely: Yes)
 
 This repository presents an analysis of the intrinsic dimensionality of data that has true dimensions and additional noise dimensions. The primary goal is to explore how various noise levels influence the perceived dimensionality and how different dimensionality reduction methods represent the data.
 
@@ -34,13 +35,15 @@ So - what if the "intrinsic" dimentionality is 2, but there are lots of redundan
 
 From the above figure, we can see that t-SNE and UMAP (default params) create the appearance of structure from random Gaussian distributions, even when doing a 100 fold dimension reduction, knowing what the true dimensions are. We also see that as noise increases, this structure gets blurier (usurprising, we'll circle back to that).
 
+You might be balking, thinking that this is still the 2 dims to 2 dims examples. It's not. Below, you'll see the heatmaps of exactly what the input data was. It's clear from the below that we really have our 2 main sources of variation, with varying levels of noise. The scatter plots on the right show the correlation between the main source variable, and an example of one of its 100 redundant features. Note however that, as we increase the spread of the data around this correlation, we really are adding a nother dimension (imgine an orthogonal line that would cut across, that we'd need to explain this noise). We can see this also if we try to estimate 
+
 ![Heatmap and Scatters](assets/heatmap_and_scatters.png)
 
-You might be balking, thinking that this is still the 2 dims to 2 dims examples. It's not. Below, you'll see the heatmaps of exactly what the input data was. It's clear from the below that we really have our 2 main sources of variation, with varying levels of noise. The scatter plots on the right show the correlation between the main source variable, and an example of one of its 100 redundant features. Note however that, as we increase the spread of the data around this correlation, we really are adding a nother dimension (imgine an orthogonal line that would cut across, that we'd need to explain this noise). We can see this also if we try to estimate 
+This plot highlights an interesting phenomenon. As noise levels (or the `sd_ratio`) increase, the estimated intrinsic dimensionality also rises. This resonates with the notion that added noise in one dimension is perceived as adding its own dimension. We can actually explicitly test what the _apparent_ "intrinsic dimensionality" is. We know that there were 2 "main variables", and what we added was noise around those 2 main variables. So what does the intrnisic dimensionality look like when estimated using the [DANCo method](https://doi.org/10.48550/arXiv.1206.3881)?
 
 ![Intrinsic Dimensions Increase with Noise](assets/intrinsic_dims_increase_with_noise.png)
 
-This plot highlights an interesting phenomenon. As noise levels (or the `sd_ratio`) increase, the estimated intrinsic dimensionality also rises. This resonates with the notion that added noise in one dimension is perceived as adding its own dimension. The challenge lies in deciphering which dimensions are "meaningful" and which are mere noise.
+The challenge lies in deciphering which dimensions are "meaningful" and which are mere noise. But that's the thing... Noise is a dimension. It's just bespoke to each individual variable.
 
 ## Conclusion
 
@@ -54,8 +57,10 @@ We see this in our own example above as well. As you increase the amount of nois
 
 In conclusion: yes - these dimension reduction algorithms overfit their intrinsic dimensionality. But we have now also seen that noise is essentially its own dimension & adding N-observation orthogonal noise dimentions blurs out the overfitting. My interpreation of this is that it's conceptually just the central limit theorum - that adding in many many sources of noise in random directions, causes the overfitting to seem to go away, but it's still there, just getting washed out by all of the other sources of overfitting layered on top.
 
-I'm also happy to be wrong on this - but it's just what the data seems to indicate.
+I'm also happy to be wrong on this - but it's just what the data seems to indicate. The data is the data, as they say...
 
 ## References
 
+- []
+- []
 - [DANCo: Dimensionality from Angle and Norm Concentration. Camastra & Vinciarelli, 2012](https://doi.org/10.48550/arXiv.1206.3881)
