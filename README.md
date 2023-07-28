@@ -25,7 +25,10 @@ The main intention behind this analysis is to:
 
 ## Results
 
-Okay - so folks have griped that the "false creation of struction from nothingness" might only happen when you "reduce" from 2 dimentions to 2 dimentions. Of course, that's not the point of dimension reduction - the point is to reduce dimetions. So - what if the "intrinsic" dimentionality is 2, but there are lots of redundant dimentions? In this situation, we have 2 "real dimentions" that could explain most of the variation in the data. We'll first simulate those 2 "real dimentions" (left hand column in the plots below), then we'll create 100 redundant dimentions per real dimention for our 1000 observations (+variable amounts of noise for the redundant dimentions: rows). So here, the input fed into the tSNE and UMAP algs are actually 1000 rows (observations), with 200 features (columns). But they are generated from 2 main features + variable amounts of noise. Do we still see structure from nothing when we are actually performing dimensionality reduction from 200 features to 2, knowing that the underlying 2 main features are unrelated? Yes. 
+Okay - so folks have griped that the "false creation of struction from nothingness" might only happen when you "reduce" from 2 dimentions to 2 dimentions. Of course, that's not the point of dimension reduction - the point is to reduce dimetions.
+https://twitter.com/slavov_n/status/1683785160825643008
+
+So - what if the "intrinsic" dimentionality is 2, but there are lots of redundant dimentions? In this situation, we have 2 "real dimentions" that could explain most of the variation in the data. We'll first simulate those 2 "real dimentions" (left hand column in the plots below), then we'll create 100 redundant dimentions per real dimention for our 1000 observations (+variable amounts of noise for the redundant dimentions: rows). So here, the input fed into the tSNE and UMAP algs are actually 1000 rows (observations), with 200 features (columns). But they are generated from 2 main features + variable amounts of noise. Do we still see structure from nothing when we are actually performing dimensionality reduction from 200 features to 2, knowing that the underlying 2 main features are unrelated? Yes. 
 
 ![True Dimensions vs Dimension Reduction](assets/true_dims_with_noise_vs_dim_reduction.png)
 
@@ -33,7 +36,7 @@ From the above figure, we can see that t-SNE and UMAP (default params) create th
 
 ![Heatmap and Scatters](assets/heatmap_and_scatters.png)
 
-This visualization provides a heatmap of observed data against the ground truth data. The scatter plots showcase the relationship between the noisy dimensions and the original data. A red line of best fit is added for clarity.
+You might be balking, thinking that this is still the 2 dims to 2 dims examples. It's not. Below, you'll see the heatmaps of exactly what the input data was. It's clear from the below that we really have our 2 main sources of variation, with varying levels of noise. The scatter plots on the right show the correlation between the main source variable, and an example of one of its 100 redundant features. Note however that, as we increase the spread of the data around this correlation, we really are adding a nother dimension (imgine an orthogonal line that would cut across, that we'd need to explain this noise). We can see this also if we try to estimate 
 
 ![Intrinsic Dimensions Increase with Noise](assets/intrinsic_dims_increase_with_noise.png)
 
@@ -41,7 +44,17 @@ This plot highlights an interesting phenomenon. As noise levels (or the `sd_rati
 
 ## Conclusion
 
-Noise, when added to data, can complicate the structure and perceived dimensionality of the dataset. While dimensionality reduction techniques like t-SNE and UMAP strive to represent this complexity, it's crucial to understand the source of the data and the nature of the noise when interpreting the results.
+So why then when simulate _only_ orthogonal dimensions, it comes out as blobs?
+https://twitter.com/ChenxinLi2/status/1683818705296461830
+https://twitter.com/willmacnair/status/1684905102576889856
+
+Well - really - we need to change what we think about dimensionality. Noise _is_ a dimension. It's not an interesting one though... So when you have 100, or 10,000 completely random inputs. The true dimensionality is 100 or 10,000 dimentions. So if you have an algorithm that will overfit every one of them, but in a unique and random way, if we think about the concept of the central limit theorum, those errors, in different random directions, will end up collapsing it back down into a hairball. Now that doesn't mean 
+
+We see this in our own example above as well. As you increase the amount of noise added on top of the "real dimentions" what you're actually doing is adding new, orthogonal (but uninteresting) dimentions. That's why we end up seeing the structure get progressively blurrier. We're actually increasing the intrinsic dimensionality, that can't be captured in a 2D display.
+
+In conclusion: yes - these dimension reduction algorithms overfit their intrinsic dimensionality. But we have now also seen that noise is essentially its own dimension & adding N-observation orthogonal noise dimentions blurs out the overfitting. My interpreation of this is that it's conceptually just the central limit theorum - that adding in many many sources of noise in random directions, causes the overfitting to seem to go away, but it's still there, just getting washed out by all of the other sources of overfitting layered on top.
+
+I'm also happy to be wrong on this - but it's just what the data seems to indicate.
 
 ## References
 
