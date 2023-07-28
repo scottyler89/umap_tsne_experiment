@@ -35,7 +35,7 @@ So - what if the "intrinsic" dimentionality is 2, but there are lots of redundan
 
 From the above figure, we can see that t-SNE and UMAP (default params) create the appearance of structure from random Gaussian distributions, even when doing a 100 fold dimension reduction, knowing what the true dimensions are. We also see that as noise increases, this structure gets blurier (usurprising, we'll circle back to that).
 
-You might be balking, thinking that this is still the 2 dims to 2 dims examples. It's not. Below, you'll see the heatmaps of exactly what the input data was. It's clear from the below that we really have our 2 main sources of variation, with varying levels of noise. The scatter plots on the right show the correlation between the main source variable, and an example of one of its 100 redundant features. Note however that, as we increase the spread of the data around this correlation, we really are adding a nother dimension (imgine an orthogonal line that would cut across, that we'd need to explain this noise). We can see this also if we try to estimate 
+You might be balking, thinking that this is still the 2 dims to 2 dims examples. It's not. Below, you'll see the heatmaps of exactly what the input data was. It's clear from the below that we really have our 2 main sources of variation, with varying levels of noise. The scatter plots on the right show the correlation between the main source variable, and an example of one of its 100 redundant features. Note however that, as we increase the spread of the data around this correlation, we really are adding another dimension (imgine an orthogonal line that would cut across, that we'd need to explain this noise). We can see this also if we try to estimate the "intrinsic dimensionality" as noted above the heatmaps.
 
 ![Heatmap and Scatters](assets/heatmap_and_scatters.png)
 
@@ -59,8 +59,11 @@ In conclusion: yes - these dimension reduction algorithms overfit their intrinsi
 
 I'm also happy to be wrong on this - but it's just what the data seems to indicate. The data is the data, as they say...
 
+That's also not to say tSNE/UMAP are completely unrelated to the underlying data! Of course they are. I've used them too. But we _do_ need to be very aware of algorithm assumptions, limitations, and perform negative controls with any method that we use. Especially if it's used for analysis rather than just visualization.
+
 ## References
 
-- []
-- []
+- [Visualizing Data Using t-SNE](https://jmlr.org/papers/v9/vandermaaten08a.html)
+- [UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction](https://doi.org/10.48550/arXiv.1802.03426)
 - [DANCo: Dimensionality from Angle and Norm Concentration. Camastra & Vinciarelli, 2012](https://doi.org/10.48550/arXiv.1206.3881)
+
