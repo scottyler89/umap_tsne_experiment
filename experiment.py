@@ -147,7 +147,7 @@ def plot_dim_reductions(true_dim_dict, results_dict):
             #axes[i, j+1].set_title(f"{method}", fontsize=12)
 
     # Add column titles
-    col_titles = ['Intrinsic Dimensions\nthat created\ninput values+noise'] + \
+    col_titles = ['Intrinsic Dimensions that\ncreated input vals+noise'] + \
         list(next(iter(results_dict.values())).keys())
     for ax, col in zip(axes[0], col_titles):
         ax.annotate(col, (0.5, 1.15), xycoords='axes fraction', ha='center',
