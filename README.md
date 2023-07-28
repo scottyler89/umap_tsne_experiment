@@ -25,9 +25,11 @@ The main intention behind this analysis is to:
 
 ## Results
 
+Okay - so folks have griped that the "false creation of struction from nothingness" might only happen when you "reduce" from 2 dimentions to 2 dimentions. Of course, that's not the point of dimension reduction - the point is to reduce dimetions. So - what if the "intrinsic" dimentionality is 2, but there are lots of redundant dimentions? In this situation, we have 2 "real dimentions" that could explain most of the variation in the data. We'll first simulate those 2 "real dimentions" (left hand column in the plots below), then we'll create 100 redundant dimentions per real dimention for our 1000 observations (+variable amounts of noise for the redundant dimentions: rows). So here, the input fed into the tSNE and UMAP algs are actually 1000 rows (observations), with 200 features (columns). But they are generated from 2 main features + variable amounts of noise. Do we still see structure from nothing when we are actually performing dimensionality reduction from 200 features to 2, knowing that the underlying 2 main features are unrelated? Yes. 
+
 ![True Dimensions vs Dimension Reduction](assets/true_dims_with_noise_vs_dim_reduction.png)
 
-From the above figure, we can observe how t-SNE and UMAP represent the data across different noise levels. As noise increases, the clarity of clusters in the reduced space might get affected.
+From the above figure, we can see that t-SNE and UMAP (default params) create the appearance of structure from random Gaussian distributions, even when doing a 100 fold dimension reduction, knowing what the true dimensions are. We also see that as noise increases, this structure gets blurier (usurprising, we'll circle back to that).
 
 ![Heatmap and Scatters](assets/heatmap_and_scatters.png)
 
