@@ -1,8 +1,10 @@
 
+import matplotlib.pyplot as plt
 import umap
 import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.manifold import TSNE
+
 
 def generate_data(n_obs, true_dims, n_redundant_per_true, true_gen_func, redundant_gen_noise_func, sd_ratio):
     """
@@ -17,23 +19,36 @@ def generate_data(n_obs, true_dims, n_redundant_per_true, true_gen_func, redunda
     - sd_ratio (float): Ratio for scaling noise
     
     Returns:
-    - out_mat (numpy matrix): Final data matrix
+    - main_mat (numpy matrix): Matrix of true dimensions
+    - redundant_mat (numpy matrix): Matrix of redundant dimensions
     """
-    
+
     # Generate the main matrix
     main_mat = true_gen_func(n_obs, true_dims)
-    
-    # Measure the standard deviation of the main matrix
-    main_mat_std = np.std(main_mat)
-    
-    # Generate the redundant matrix
-    redundant_mat = np.hstack([redundant_gen_noise_func(n_obs, true_dims) * sd_ratio * main_mat_std 
-                               for _ in range(n_redundant_per_true)])
-    
-    # Combine the matrices
-    out_mat = np.hstack([main_mat, redundant_mat])
-    
-    return out_mat
+
+    # Placeholder for the redundant dimensions
+    redundant_dims = []
+
+    for i in range(true_dims):
+        # Standard deviation for this dimension in main_mat
+        dim_std = np.std(main_mat[:, i])
+
+        # Create n_redundant_per_true redundant dimensions seeded at main_mat[:, i] values
+        for _ in range(n_redundant_per_true):
+            noise = redundant_gen_noise_func(n_obs, 1)
+            redundant_dim = main_mat[:, i][:,
+                                           np.newaxis] + noise * sd_ratio * dim_std
+
+            # Standardize the redundant dimension
+            redundant_dim = redundant_dim / np.std(redundant_dim)
+
+            redundant_dims.append(redundant_dim)
+
+    # Stack all redundant dimensions horizontally
+    redundant_mat = np.hstack(redundant_dims)
+
+    return main_mat, redundant_mat
+
 
 def dim_reduction(in_mat, dim_red_func_list, dim_red_names, final_dims):
     """
@@ -45,17 +60,17 @@ def dim_reduction(in_mat, dim_red_func_list, dim_red_names, final_dims):
     - final_dims (int): Number of dimensions after reduction
     
     Returns:
-    - dim_red_mat (numpy matrix): Dimension reduced matrix
+    - results (dict): dictionary of dim_red_names and their results
     """
     
     # Placeholder for the results from each dimension reduction function
-    results = []
+    results = {}
     
-    for func in dim_red_func_list:
+    for func, name in zip(dim_red_func_list, dim_red_names):
         result = func(in_mat, final_dims)
-        results.append(result)
+        results[name]=result
         
-    return dim_red_mat
+    return results
 
 
 
@@ -116,23 +131,72 @@ def redundant_gen_noise_func(n_obs, true_dims):
     return np.random.randn(n_obs, true_dims)
 
 
+#########################################
+
+
+def plot_dim_reductions(true_dim_dict, results_dict):
+    """
+    Plots scatter plots of true dimensions and results of dimension reduction methods.
+    
+    Args:
+    - true_dim_dict (dict): Dictionary of true dimensions for each sd_ratio
+    - results_dict (dict): Dictionary of results for each sd_ratio and each dimension reduction method
+    
+    """
+    # Number of rows is the number of sd_ratios
+    n_rows = len(results_dict)
+
+    # Number of columns is 1 (for true dimensions) + number of dimension reduction methods
+    n_cols = 1 + len(next(iter(results_dict.values())))
+
+    # Create a figure with subplots
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 5 * n_rows))
+
+    # Loop through each sd_ratio and plot
+    for i, sd_ratio in enumerate(results_dict):
+        # Plot true dimensions
+        axes[i, 0].scatter(true_dim_dict[sd_ratio][:, 0],
+                           true_dim_dict[sd_ratio][:, 1], alpha=0.6)
+        axes[i, 0].set_title(f"True Dimensions ({sd_ratio})")
+
+        # Loop through each dimension reduction method and plot
+        for j, method in enumerate(results_dict[sd_ratio]):
+            axes[i, j+1].scatter(results_dict[sd_ratio][method][:, 0],
+                                 results_dict[sd_ratio][method][:, 1], alpha=0.6)
+            axes[i, j+1].set_title(f"{method} ({sd_ratio})")
+
+    plt.tight_layout()
+    plt.show()
+
+
+
+
+#########################################
 
 # Parameters for the experiment
+np.random.seed(123456)
 n_obs = 1000
 true_dims = 2
 n_redundant_per_true = 100
-sd_ratios = []
+sd_ratios = [0.01, 0.05, 0.25]
+true_dim_dict = {}
+results_dict = {}
 for sd_ratio in sd_ratios:
-    sd_ratio = 0.01
+    sd_name = "SD ratio:"+str(sd_ratio)
     final_dims = true_dims  # This is just an example; adjust as needed
-
     # Generate data
-    data = generate_data(n_obs, true_dims, n_redundant_per_true, true_gen_func, redundant_gen_noise_func, sd_ratio)
+    true_dim_data, obs_data = generate_data(n_obs, true_dims, n_redundant_per_true, true_gen_func, redundant_gen_noise_func, sd_ratio)
+
+    # log the true dimensions
+    true_dim_dict[sd_name] = true_dim_data
 
     # Perform dimension reduction
     dim_red_funcs = [tsne_wrapper, umap_wrapper]
-    reduced_data = dim_reduction(data, dim_red_funcs, ["tSNE","UMAP"], final_dims)
+    dim_red_names = ["tSNE","UMAP"]
+    results_dict[sd_name] = dim_reduction(obs_data, dim_red_funcs, dim_red_names, final_dims)
 
-    # For now, the result will only contain the reduced data from the first function (tSNE in this case).
-    # You can extend this to handle and analyze results from multiple dimension reduction functions.
+
+# Call the function to plot
+plot_dim_reductions(true_dim_dict, results_dict)
+
 
