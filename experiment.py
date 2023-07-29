@@ -12,7 +12,39 @@ from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 
 
-def generate_data(n_obs, true_dims, n_redundant_per_true, true_gen_func, redundant_gen_noise_func, sd_ratio):
+def get_main_mat(true_gen_func, n_obs, true_dims, separation=0):
+    """
+    Generate the main matrix with an optional separation between two clusters.
+    
+    Args:
+    - true_gen_func (function): Function to generate the main matrix
+    - n_obs (int): Number of observations
+    - true_dims (int): Number of true dimensions
+    - separation (float): Multiple of standard deviation for separating clusters
+    
+    Returns:
+    - main_mat (numpy array): Generated main matrix
+    """
+    if separation == 0:
+        return true_gen_func(n_obs, true_dims)
+
+    # Generate half of the observations
+    half_obs = n_obs // 2
+    cluster_1 = true_gen_func(half_obs, true_dims)
+
+    # Generate the other half with an offset in the first dimension
+    cluster_2 = true_gen_func(half_obs, true_dims)
+    offset = separation * np.std(cluster_1[:, 0])
+    cluster_2[:, 0] += offset
+    # Concatenate the two clusters vertically
+    main_mat = np.vstack([cluster_1, cluster_2])
+
+    return main_mat
+
+
+
+
+def generate_data(n_obs, true_dims, n_redundant_per_true, true_gen_func, redundant_gen_noise_func, sd_ratio, separation=0):
     """
     Generates data matrix with true dimensions and redundant dimensions.
     
@@ -29,7 +61,8 @@ def generate_data(n_obs, true_dims, n_redundant_per_true, true_gen_func, redunda
     - redundant_mat (numpy matrix): Matrix of redundant dimensions
     """
     # Generate the main matrix
-    main_mat = true_gen_func(n_obs, true_dims)
+    
+    main_mat = get_main_mat(true_gen_func, n_obs, true_dims, separation=separation)
     # Placeholder for the redundant dimensions
     redundant_dims = []
     for i in range(true_dims):
@@ -373,24 +406,28 @@ n_obs = 1000
 true_dims = 2
 n_redundant_per_true = 100
 sd_ratios = [0.01, 0.05, 0.25, 0.5, 1.]
+separation_vect = [0,4]
+sep_dict = {}
 intrinsic_dim_estimate_dict = {}
 true_dim_dict = {}
 obs_data_dict = {}
 results_dict = {}
 sd_lookup = {}
+for sep in separation_vect:
+    sep_name = "Clust Sep:"+str()
 for sd_ratio in sd_ratios:
     sd_name = "SD ratio:"+str(sd_ratio)
     sd_lookup[sd_name] = sd_ratio
     final_dims = true_dims  # This is just an example; adjust as needed
     # Generate data
-    true_dim_data, obs_data = generate_data(n_obs, true_dims, n_redundant_per_true, true_gen_func, redundant_gen_noise_func, sd_ratio)
+    true_dim_data, obs_data = generate_data(n_obs, true_dims, n_redundant_per_true, true_gen_func, redundant_gen_noise_func, sd_ratio, separation=4)
 
     # Estimates of intrinsic dimensionality.
     # Interesting note here, but it actually identifies
     # that as noise dimensions are added, and the size of the noise relative to
-    #  dims are 'real dims.' This fits with the model of it finding 
+    # dims are 'real dims.' This fits with the model of it finding 
     # that added noise in one dimension is actually adding its own dimension, even if the 'real'
-    # varyation was already accounted for by prior dims. It's not like this is incorrect or anything...
+    # variation was already accounted for by prior dims. It's not like this is incorrect or anything...
     # It's just that noise is a dimension. The hard part is figuring out which dims are "meaningful"!
     ## https: // doi.org/10.48550/arXiv.1206.3881
     danco = skdim.id.DANCo().fit(obs_data)
