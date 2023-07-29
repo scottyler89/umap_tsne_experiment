@@ -47,11 +47,11 @@ This plot highlights an interesting phenomenon. As noise levels (or the `sd_rati
 
 The challenge lies in deciphering which dimensions are "meaningful" and which are mere noise. But that's the thing... Noise is a dimension. It's just bespoke to each individual variable.
 
-How well do they recapitulate the original observation:observation distances? This is an important question, but one to be interpreted with some degree of caution. In this case we're using random inputs, so the distances should be 1-to-1. But in situations where you have curved space, if your dimension reduction 'flattens' that space, you wouldn't expect it to be 1-to-1; however, you would still expect it to be monotonic, with low variation around the monotonic curve. So what do the results look like? Have a look below (X-axist: True distances (based on 'main' dimensions), Y-axis: Dim-reduced distances):
+How well do they recapitulate the original observation:observation distances? This is an important question, but one to be interpreted with some degree of caution. In this case we're using random inputs, so the distances should be 1-to-1. But in situations where you have curved space, if your dimension reduction 'flattens' that space, you wouldn't expect it to be 1-to-1; however, you would still expect it to be monotonic, with low variation around the monotonic curve. So what do the results look like? Have a look below (X-axis: True distances (based on 'main' dimensions), Y-axis: Dim-reduced distances):
 
 ![Distance Correlations](assets/distance_correlations.png)
 
-Unsurprisingly in this case, PCA is bang on, followed by NMF, which has a heteroscedastic pattern, meaning that it preserves very nearby structure a bit better than global. tSNE and UMAP have similar strange patterns and small areas (that likely correspond to the 'cluster' looking structures), which decrease the quality of the conservation of distances. SOM was interesting here, because just looking at the 2D projection, it seemed like it 
+Unsurprisingly in this case, PCA is bang on, followed by NMF, which has a heteroscedastic pattern, meaning that it preserves very nearby structure a bit better than global. tSNE and UMAP have similar strange patterns and small areas (that likely correspond to the 'cluster' looking structures), which decrease the quality of the conservation of distances. SOM was interesting here, because just looking at the 2D projection, it seemed like it somewhat captured the Gaussian like structure. But when we look at the actual distances, we see that which point ended up where within that Gaussian like grid pattern didn't necessarily match up, as it had the least conservation of distances.
 
 ## Conclusion
 
