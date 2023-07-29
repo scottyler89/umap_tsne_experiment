@@ -1,3 +1,7 @@
+from scipy.stats import pearsonr
+from scipy.spatial import distance_matrix
+from sklearn.decomposition import NMF
+from minisom import MiniSom
 import skdim
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -5,6 +9,7 @@ import umap
 import numpy as np
 from matplotlib import pyplot as plt
 from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
 
 
 def generate_data(n_obs, true_dims, n_redundant_per_true, true_gen_func, redundant_gen_noise_func, sd_ratio):
@@ -63,15 +68,63 @@ def dim_reduction(in_mat, dim_red_func_list, dim_red_names, final_dims):
     return results
 
 
-
+####################################################
 def tsne_wrapper(data, n_components):
     tsne = TSNE(n_components=n_components)
     return tsne.fit_transform(data)
+
 
 def umap_wrapper(data, n_components):
     reducer = umap.UMAP(n_components=n_components)
     return reducer.fit_transform(data)
 
+
+def pca_wrapper(data, n_components):
+    pca = PCA(n_components=n_components)
+    return pca.fit_transform(data)
+
+
+def nmf_wrapper(data, n_components, epsilon = 1e-8):
+    """
+    Use NMF for dimensionality reduction.
+    
+    Parameters:
+    - data: input data
+    - n_components: number of components for the reduced dimension
+    
+    Returns:
+    - transformed_data: numpy array of shape (n_samples, n_components)
+    """
+    data -= np.min(data)
+    data += epsilon
+    nmf = NMF(n_components=n_components, init='random', random_state=0)
+    transformed_data = nmf.fit_transform(data)
+    return transformed_data
+
+
+def som_wrapper(data, n_components=2):
+    """
+    Use MiniSom for SOM.
+    Note: For SOM, n_components is expected to be 2 since we are using a 2D grid.
+    
+    Parameters:
+    - data: input data
+    - n_components: dimensions of the output (expected to be 2 for a 2D grid)
+    
+    Returns:
+    - positions: numpy array of shape (n_samples, n_components) representing positions on the grid
+    """
+    assert n_components == 2, "For SOM, n_components should be 2."
+
+    x_size, y_size = 50, 50  # You can adjust these values based on your needs
+    som = MiniSom(x_size, y_size, data.shape[1])
+    som.train_random(data, 5000)
+
+    positions = np.array([som.winner(d) for d in data])
+    return positions
+
+
+#####################################################
 
 def true_gen_func(n_obs, true_dims):
     """
@@ -119,7 +172,7 @@ def plot_dim_reductions(true_dim_dict, results_dict):
     n_cols = 1 + len(next(iter(results_dict.values())))
 
     # Create a figure with subplots
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(15, 5 * n_rows))
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(5*n_cols, 5 * n_rows))
 
     # Adjust the spacing between subplots
     # Adjust these values as needed for desired spacing
@@ -158,22 +211,6 @@ def plot_dim_reductions(true_dim_dict, results_dict):
                 spine.set_linewidth(2)
     plt.savefig("assets/true_dims_with_noise_vs_dim_reduction.png", dpi=300)
 
-
-def rotate_point_around_origin(point, angle):
-    """
-    Rotates a point around the origin by a given angle.
-    
-    Args:
-    - point (tuple): (x, y) coordinates of the point
-    - angle (float): Angle in radians to rotate
-    
-    Returns:
-    - (x', y'): Rotated coordinates of the point
-    """
-    x, y = point
-    x_rot = x * np.cos(angle) - y * np.sin(angle)
-    y_rot = x * np.sin(angle) + y * np.cos(angle)
-    return x_rot, y_rot
 
 
 def plot_obs_data_heatmap(gt_data_dict, obs_data_dict, danco_dict):
@@ -227,6 +264,77 @@ def plot_obs_data_heatmap(gt_data_dict, obs_data_dict, danco_dict):
             for spine in ax.spines.values():
                 spine.set_linewidth(2)
     plt.savefig("assets/heatmap_and_scatters.png", dpi=300)
+
+
+#########
+
+
+def plot_distance_correlations(true_dim_dict, results_dict):
+    """
+    Plots scatter plots of true pairwise distances and pairwise distances from dimension reduction methods.
+    
+    Args:
+    - true_dim_dict (dict): Dictionary of true dimensions for each sd_ratio
+    - results_dict (dict): Dictionary of results for each sd_ratio and each dimension reduction method
+    
+    """
+    # Number of rows is the number of sd_ratios
+    n_rows = len(results_dict)
+
+    # Number of columns is 1 (for true dimensions) + number of dimension reduction methods
+    n_cols = 1 + len(next(iter(results_dict.values())))
+
+    # Create a figure with subplots
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(5*n_cols, 5 * n_rows))
+
+    # Adjust the spacing between subplots
+    fig.subplots_adjust(wspace=0.3, hspace=0.3)
+
+    # Loop through each sd_ratio and plot
+    for i, sd_ratio in enumerate(results_dict):
+        # Compute true pairwise distances and flatten
+        true_distances = distance_matrix(
+            true_dim_dict[sd_ratio], true_dim_dict[sd_ratio])
+        true_distances_flat = true_distances.flatten()
+
+        # Plot true distances against themselves
+        axes[i, 0].scatter(true_distances_flat,
+                           true_distances_flat, alpha=0.6, s=5)
+        r_val, p_val = pearsonr(true_distances_flat, true_distances_flat)
+        axes[i, 0].set_title(f"r={r_val:.2f}, p={p_val:.2e}", fontsize=22)
+
+        # Loop through each dimension reduction method and plot
+        for j, method in enumerate(results_dict[sd_ratio]):
+            # Compute pairwise distances for reduced data and flatten
+            reduced_distances = distance_matrix(
+                results_dict[sd_ratio][method], results_dict[sd_ratio][method])
+            reduced_distances_flat = reduced_distances.flatten()
+
+            # Plot true distances against reduced distances
+            axes[i, j+1].scatter(true_distances_flat,
+                                 reduced_distances_flat, alpha=0.025, s=5)
+
+            # Compute correlation
+            r_val, p_val = pearsonr(
+                true_distances_flat, reduced_distances_flat)
+            axes[i, j +
+                 1].set_title(f"r={r_val:.2f}, p={p_val:.2e}", fontsize=22)
+
+    # Add column titles
+    col_titles = ['True Distances'] + \
+        list(next(iter(results_dict.values())).keys())
+    for ax, col in zip(axes[0], col_titles):
+        ax.annotate(col, (0.5, 1.15), xycoords='axes fraction', ha='center',
+                    va='center', fontsize=26, textcoords='offset points')
+
+    for ax_row in axes:
+        for ax in ax_row:
+            for spine in ax.spines.values():
+                spine.set_linewidth(2)
+
+    # Save the figure
+    plt.savefig("assets/distance_correlations.png", dpi=300)
+
 
 
 #########
@@ -294,8 +402,8 @@ for sd_ratio in sd_ratios:
     obs_data_dict[sd_name] = obs_data
 
     # Perform dimension reduction
-    dim_red_funcs = [tsne_wrapper, umap_wrapper]
-    dim_red_names = ["tSNE","UMAP"]
+    dim_red_funcs = [pca_wrapper, nmf_wrapper, tsne_wrapper, umap_wrapper, som_wrapper]
+    dim_red_names = ["PCA", "NMF", "tSNE", "UMAP", "SOM"]
     results_dict[sd_name] = dim_reduction(obs_data, dim_red_funcs, dim_red_names, final_dims)
 
 
@@ -311,4 +419,7 @@ plot_obs_data_heatmap(true_dim_dict, obs_data_dict,
 
 # Call the function to plot
 plot_intrinsic_dimensionality(sd_lookup, intrinsic_dim_estimate_dict)
+
+
+plot_distance_correlations(true_dim_dict, results_dict)
 

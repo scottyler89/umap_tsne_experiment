@@ -4,3 +4,4 @@ numpy
 matplotlib
 scikit-learn
 scikit-dimension
+minisom
