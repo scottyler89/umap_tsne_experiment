@@ -17,7 +17,7 @@ The main intention behind this analysis is to:
    - For each true dimension, redundant dimensions were added. These dimensions were seeded from the true data but had noise introduced, which was controlled by a specified standard deviation ratio (`sd_ratio`).
 
 2. **Dimension Reduction**:
-   - For each noise level, dimensionality was reduced using two popular methods: t-SNE and UMAP.
+   - For each noise level, dimensionality was reduced using some popular linear & non-linear methods: PCA, NMF, t-SNE, UMAP, and SOM.
    - The reduced dimensions were then visualized against the true dimensions to observe the effects of noise.
 
 3. **Intrinsic Dimensionality Estimation**:
@@ -29,11 +29,13 @@ The main intention behind this analysis is to:
 Okay - so folks have griped that the "false creation of struction from nothingness" might only happen when you "reduce" from 2 dimentions to 2 dimentions. Of course, that's not the point of dimension reduction - the point is to reduce dimensions.
 https://twitter.com/slavov_n/status/1683785160825643008
 
-So - what if the "intrinsic" dimentionality is 2, but there are lots of redundant dimentions? In this situation, we have 2 "real dimentions" that could explain most of the variation in the data. We'll first simulate those 2 "real dimentions" (left hand column in the plots below), then we'll create 100 redundant dimentions per real dimention for our 1000 observations (+variable amounts of noise for the redundant dimentions: rows). So here, the input fed into the tSNE and UMAP algs are actually 1000 rows (observations), with 200 features (columns). But they are generated from 2 main features + variable amounts of noise. Do we still see structure from nothing when we are actually performing dimensionality reduction from 200 features to 2, knowing that the underlying 2 main features are unrelated? Yes. 
+So - what if the "intrinsic" dimentionality is 2, but there are lots of redundant dimentions? In this situation, we have 2 "real dimentions" that could explain most of the variation in the data. We'll first simulate those 2 "real dimentions" (left hand column in the plots below), then we'll create 100 redundant dimentions per real dimention for our 1000 observations (+variable amounts of noise for the redundant dimentions: rows). So here, the input fed into the algs are actually 1000 rows (observations), with 200 features (columns). But they are generated from 2 main features + variable amounts of noise. Do we still see structure from nothing when we are actually performing dimensionality reduction from 200 features to 2, knowing that the underlying 2 main features are unrelated? Yes. 
 
 ![True Dimensions vs Dimension Reduction](assets/true_dims_with_noise_vs_dim_reduction.png)
 
-From the above figure, we can see that t-SNE and UMAP (default params) create the appearance of structure from random Gaussian distributions, even when doing a 100 fold dimension reduction, knowing what the true dimensions are. We also see that as noise increases, this structure gets blurier (usurprising, we'll circle back to that).
+From the above figure, we can see that PCA looks similar to the true dimensions. NMF (w/ data shifted up to be non-negative) honestly surprised me here... I don't have a good intuition for why adding noise, creates that elongated shape... ¯\_ (ツ)_/¯. Ideally it wouldn't - it might give the impression that there is some sort of "trajectory" but we see here that just noise can create that illusion.
+
+When we look at the t-SNE and UMAP (default params), we find that they create the appearance of structure from random Gaussian distributions, even when doing a 100 fold dimension reduction, knowing what the true dimensions are. We also see that as noise increases, this structure gets blurier (usurprising, we'll circle back to that). If you're not familiar with SOM, it might look strange, but it just places observations inside of a 2D grid, so that's why it looks uniform; overall it visually looks like it made something Gaussian-ish, but the grid pattern makes it a bit harder to interpret.
 
 You might be balking, thinking that this is still the 2 dims to 2 dims examples. It's not. Below, you'll see the heatmaps of exactly what the input data was. It's clear from the below that we really have our 2 main sources of variation, with varying levels of noise. The scatter plots on the right show the correlation between the main source variable, and an example of one of its 100 redundant features. Note however that, as we increase the spread of the data around this correlation, we really are adding another dimension (imgine an orthogonal line that would cut across, that we'd need to explain this noise). We can see this also if we try to estimate the "intrinsic dimensionality" as noted above the heatmaps.
 
@@ -44,6 +46,12 @@ This plot highlights an interesting phenomenon. As noise levels (or the `sd_rati
 ![Intrinsic Dimensions Increase with Noise](assets/intrinsic_dims_increase_with_noise.png)
 
 The challenge lies in deciphering which dimensions are "meaningful" and which are mere noise. But that's the thing... Noise is a dimension. It's just bespoke to each individual variable.
+
+How well do they recapitulate the original observation:observation distances? This is an important question, but one to be interpreted with some degree of caution. In this case we're using random inputs, so the distances should be 1-to-1. But in situations where you have curved space, if your dimension reduction 'flattens' that space, you wouldn't expect it to be 1-to-1; however, you would still expect it to be monotonic, with low variation around the monotonic curve. So what do the results look like? Have a look below (X-axist: True distances (based on 'main' dimensions), Y-axis: Dim-reduced distances):
+
+![Distance Correlations](assets/distance_correlations.png)
+
+Unsurprisingly in this case, PCA is bang on, followed by NMF, which has a heteroscedastic pattern, meaning that it preserves very nearby structure a bit better than global. tSNE and UMAP have similar strange patterns and small areas (that likely correspond to the 'cluster' looking structures), which decrease the quality of the conservation of distances. SOM was interesting here, because just looking at the 2D projection, it seemed like it 
 
 ## Conclusion
 
