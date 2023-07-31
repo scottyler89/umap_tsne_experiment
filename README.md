@@ -75,9 +75,16 @@ The reason that this seems to help is that the noise dimensions are all orthogon
 
 Does this mean that I should just add some noise to my data & then it's fine? No. It's important to remember here that what we're calling noise and signal in simulations is somewhat arbitrary. If we keep adding more and more noise, all of the apparent structure will get progressively more drowned out. But we don't have an objective function to know that is 'real' signal & what is 'noise' signal, or technical variability in our measures, etc. To tackle those problems, you'll have to know what the noise sources are, and try to correct for them explicitly.
 
+So how well did they recapitualte the original distances in 'real' dimension space?
+
+![Distance Correlations clust](assets/distance_correlations_4separation.png)
+
+Overall, the results seem fairly similar to the negative control. PCA does fairly well, but becomes more heteroscedastic in the relationship of the real and observed distances, somewhat more like NMF was originally. tSNE and UMAP are relatively monotonic, but the added local structures can be seen as the jagged edges and whisps added into the central correlation pattern & SOM still seems to struggle.
 
 
 ## Conclusion
+
+### With strict negative controls:
 
 So why then when simulate _only_ orthogonal dimensions, it comes out as blobs?
 https://twitter.com/ChenxinLi2/status/1683818705296461830
@@ -89,13 +96,23 @@ We see this in our own example above as well. As you increase the amount of nois
 
 In conclusion: yes - these dimension reduction algorithms overfit their intrinsic dimensionality. But we have now also seen that noise is essentially its own dimension & adding N-observation orthogonal noise dimentions blurs out the overfitting. My interpreation of this is that it's conceptually just the central limit theorum - that adding in many many sources of noise in random directions, causes the overfitting to seem to go away, but it's still there, just getting washed out by all of the other sources of overfitting layered on top.
 
+### With a true source of structure present
+
+Overall even when one of the dimensions encodes a separation of points between them, we see the same thing as above. Bearing in mind that this simulation was with Gaussian distributed data, PCA did the best job, and not far behind was NMF. But tSNE and UMAP had the same issues as in the negative control, synthesizing extra local structure until sufficiently large noise was added, deceasing the overall neighbor overfitting. SOM struggles a bit - perhaps this is not the best use-case...
+
+Dmitry Kobak has mentioned that it always seems like it's in simulation rather than real world datasets that this overfitting pattern emerges. I think this simulation actually directly gets to the bottom of that. In real world data - there are many noise dimensions! In the single-cell -omics domain, every feature comes with both systematic technical sources of variation (which may be correlated between them based on some mediator variable), and there's also the noise of Poisson sampling.
+
+Ultimately, the challenge will be unraveling what's a noise dimension & what's a 'real' dimension. Answering this question will of course be _exceptionally_ domain specific, so I can't proffer any advice here... That being said, I have some ideas in the single cell space ;-)
+
+## Final remarks
+
 I'm also happy to be wrong on this - but it's just what the data seems to indicate. The data is the data, as they say...
 
-That's also not to say tSNE/UMAP are completely unrelated to the underlying data! Of course they are. I've used them too. But we _do_ need to be very aware of algorithm assumptions, limitations, and perform negative controls with any method that we use. Especially if it's used for analysis rather than just visualization.
+That's also not to say tSNE/UMAP are completely unrelated to the underlying data! Of course they are related. I've used them too. But we _do_ need to be very aware of algorithm assumptions, limitations, and perform negative controls with any method that we use. Especially if it's used for analysis rather than just visualization.
 
 ## References
 
 - [Visualizing Data Using t-SNE](https://jmlr.org/papers/v9/vandermaaten08a.html)
 - [UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction](https://doi.org/10.48550/arXiv.1802.03426)
 - [DANCo: Dimensionality from Angle and Norm Concentration. Camastra & Vinciarelli, 2012](https://doi.org/10.48550/arXiv.1206.3881)
-
+TODO: need to cite the others
