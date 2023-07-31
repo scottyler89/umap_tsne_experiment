@@ -33,7 +33,7 @@ def get_main_mat(true_gen_func, n_obs, true_dims, separation=0):
     cluster_1 = true_gen_func(half_obs, true_dims)
 
     # Generate the other half with an offset in the first dimension
-    cluster_2 = true_gen_func(half_obs, true_dims)
+    cluster_2 = true_gen_func(int(n_obs - half_obs), true_dims)
     offset = separation * np.std(cluster_1[:, 0])
     cluster_2[:, 0] += offset
     # Concatenate the two clusters vertically
@@ -61,8 +61,10 @@ def generate_data(n_obs, true_dims, n_redundant_per_true, true_gen_func, redunda
     - redundant_mat (numpy matrix): Matrix of redundant dimensions
     """
     # Generate the main matrix
-    
-    main_mat = get_main_mat(true_gen_func, n_obs, true_dims, separation=separation)
+    if separation == 0.:
+        main_mat = true_gen_func(n_obs, true_dims)
+    else:
+        main_mat = get_main_mat(true_gen_func, n_obs, true_dims, separation=separation)
     # Placeholder for the redundant dimensions
     redundant_dims = []
     for i in range(true_dims):
@@ -189,7 +191,7 @@ def redundant_gen_noise_func(n_obs, true_dims):
 
 #########################################
 
-def plot_dim_reductions(true_dim_dict, results_dict):
+def plot_dim_reductions(true_dim_dict, results_dict, sep_str):
     """
     Plots scatter plots of true dimensions and results of dimension reduction methods.
     
@@ -242,11 +244,11 @@ def plot_dim_reductions(true_dim_dict, results_dict):
         for ax in ax_row:
             for spine in ax.spines.values():
                 spine.set_linewidth(2)
-    plt.savefig("assets/true_dims_with_noise_vs_dim_reduction.png", dpi=300)
+    plt.savefig("assets/true_dims_with_noise_vs_dim_reduction"+sep_str+".png", dpi=300)
 
 
 
-def plot_obs_data_heatmap(gt_data_dict, obs_data_dict, danco_dict):
+def plot_obs_data_heatmap(gt_data_dict, obs_data_dict, danco_dict, sep_str):
     """
     Plots heatmaps of obs_data for each sd_ratio.
     
@@ -296,13 +298,13 @@ def plot_obs_data_heatmap(gt_data_dict, obs_data_dict, danco_dict):
         for ax in ax_row:
             for spine in ax.spines.values():
                 spine.set_linewidth(2)
-    plt.savefig("assets/heatmap_and_scatters.png", dpi=300)
+    plt.savefig("assets/heatmap_and_scatters"+sep_str+".png", dpi=300)
 
 
 #########
 
 
-def plot_distance_correlations(true_dim_dict, results_dict):
+def plot_distance_correlations(true_dim_dict, results_dict, sep_str):
     """
     Plots scatter plots of true pairwise distances and pairwise distances from dimension reduction methods.
     
@@ -366,14 +368,14 @@ def plot_distance_correlations(true_dim_dict, results_dict):
                 spine.set_linewidth(2)
 
     # Save the figure
-    plt.savefig("assets/distance_correlations.png", dpi=300)
+    plt.savefig("assets/distance_correlations"+sep_str+".png", dpi=300)
 
 
 
 #########
 
 
-def plot_intrinsic_dimensionality(sd_lookup, intrinsic_dim_estimate_dict):
+def plot_intrinsic_dimensionality(sd_lookup, intrinsic_dim_estimate_dict, sep_str):
     """
     Plots the estimated intrinsic dimensionality against noise levels.
     
@@ -394,7 +396,7 @@ def plot_intrinsic_dimensionality(sd_lookup, intrinsic_dim_estimate_dict):
     plt.title("Intrinsic Dimensionality vs. Noise Level")
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
     plt.tight_layout()
-    plt.savefig("assets/intrinsic_dims_increase_with_noise.png", dpi=300)
+    plt.savefig("assets/intrinsic_dims_increase_with_noise"+sep_str+".png", dpi=300)
 
 
 #########
@@ -406,7 +408,7 @@ n_obs = 1000
 true_dims = 2
 n_redundant_per_true = 100
 sd_ratios = [0.01, 0.05, 0.25, 0.5, 1.]
-separation_vect = [0,4]
+separation_vect = [0, 4]
 sep_dict = {}
 intrinsic_dim_estimate_dict = {}
 true_dim_dict = {}
@@ -414,49 +416,44 @@ obs_data_dict = {}
 results_dict = {}
 sd_lookup = {}
 for sep in separation_vect:
-    sep_name = "Clust Sep:"+str()
-for sd_ratio in sd_ratios:
-    sd_name = "SD ratio:"+str(sd_ratio)
-    sd_lookup[sd_name] = sd_ratio
-    final_dims = true_dims  # This is just an example; adjust as needed
-    # Generate data
-    true_dim_data, obs_data = generate_data(n_obs, true_dims, n_redundant_per_true, true_gen_func, redundant_gen_noise_func, sd_ratio, separation=4)
+    sep_name = "Clust Sep:"+str(sep)
+    
+    for sd_ratio in sd_ratios:
+        sd_name = "SD ratio:"+str(sd_ratio)
+        sd_lookup[sd_name] = sd_ratio
+        final_dims = true_dims  # This is just an example; adjust as needed
+        # Generate data
+        true_dim_data, obs_data = generate_data(n_obs, true_dims, n_redundant_per_true, true_gen_func, redundant_gen_noise_func, sd_ratio, separation=sep)
 
-    # Estimates of intrinsic dimensionality.
-    # Interesting note here, but it actually identifies
-    # that as noise dimensions are added, and the size of the noise relative to
-    # dims are 'real dims.' This fits with the model of it finding 
-    # that added noise in one dimension is actually adding its own dimension, even if the 'real'
-    # variation was already accounted for by prior dims. It's not like this is incorrect or anything...
-    # It's just that noise is a dimension. The hard part is figuring out which dims are "meaningful"!
-    ## https: // doi.org/10.48550/arXiv.1206.3881
-    danco = skdim.id.DANCo().fit(obs_data)
-    print(danco.dimension_)
-    intrinsic_dim_estimate_dict[sd_name] = danco.dimension_
+        # Estimates of intrinsic dimensionality.
+        # Interesting note here, but it actually identifies
+        # that as noise dimensions are added, and the size of the noise relative to
+        # dims are 'real dims.' This fits with the model of it finding 
+        # that added noise in one dimension is actually adding its own dimension, even if the 'real'
+        # variation was already accounted for by prior dims. It's not like this is incorrect or anything...
+        # It's just that noise is a dimension. The hard part is figuring out which dims are "meaningful"!
+        ## https: // doi.org/10.48550/arXiv.1206.3881
+        danco = skdim.id.DANCo().fit(obs_data)
+        print(danco.dimension_)
+        intrinsic_dim_estimate_dict[sd_name] = danco.dimension_
 
-    # log the data
-    true_dim_dict[sd_name] = true_dim_data
-    obs_data_dict[sd_name] = obs_data
+        # log the data
+        true_dim_dict[sd_name] = true_dim_data
+        obs_data_dict[sd_name] = obs_data
 
-    # Perform dimension reduction
-    dim_red_funcs = [pca_wrapper, nmf_wrapper, tsne_wrapper, umap_wrapper, som_wrapper]
-    dim_red_names = ["PCA", "NMF", "tSNE", "UMAP", "SOM"]
-    results_dict[sd_name] = dim_reduction(obs_data, dim_red_funcs, dim_red_names, final_dims)
-
-
-# Call the function to plot
-plot_dim_reductions(true_dim_dict, results_dict)
-
-
-
-# Call the function to plot
-plot_obs_data_heatmap(true_dim_dict, obs_data_dict,
-                      intrinsic_dim_estimate_dict)
-
-
-# Call the function to plot
-plot_intrinsic_dimensionality(sd_lookup, intrinsic_dim_estimate_dict)
-
-
-plot_distance_correlations(true_dim_dict, results_dict)
+        # Perform dimension reduction
+        dim_red_funcs = [pca_wrapper, nmf_wrapper, tsne_wrapper, umap_wrapper, som_wrapper]
+        dim_red_names = ["PCA", "NMF", "tSNE", "UMAP", "SOM"]
+        results_dict[sd_name] = dim_reduction(obs_data, dim_red_funcs, dim_red_names, final_dims)
+    if sep==0:
+        sep_str = ""
+    else:
+        sep_str = "_"+str(sep)+"separation"
+    # Call the plotting functions
+    plot_dim_reductions(true_dim_dict, results_dict, sep_str)
+    plot_obs_data_heatmap(true_dim_dict, obs_data_dict,
+                        intrinsic_dim_estimate_dict, sep_str)
+    plot_intrinsic_dimensionality(sd_lookup, intrinsic_dim_estimate_dict, sep_str)
+    plot_distance_correlations(true_dim_dict, results_dict, sep_str)
+    sep_dict[sep_name] = results_dict
 
