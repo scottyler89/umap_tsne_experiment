@@ -24,7 +24,9 @@ The main intention behind this analysis is to:
    - At each noise level, the intrinsic dimensionality of the data was estimated using the DANCo method.
    - This helped us understand how perceived dimensionality changes as noise increases.
 
-## Results
+## Results: 
+
+### 2 "real" dimensions, no structure in observations
 
 Okay - so folks have griped that the "false creation of struction from nothingness" might only happen when you "reduce" from 2 dimentions to 2 dimentions. Of course, that's not the point of dimension reduction - the point is to reduce dimensions.
 https://twitter.com/slavov_n/status/1683785160825643008
@@ -33,7 +35,7 @@ So - what if the "intrinsic" dimentionality is 2, but there are lots of redundan
 
 ![True Dimensions vs Dimension Reduction](assets/true_dims_with_noise_vs_dim_reduction.png)
 
-From the above figure, we can see that PCA looks similar to the true dimensions. NMF (w/ data shifted up to be non-negative) honestly surprised me here... I don't have a good intuition for why adding noise, creates that elongated shape... ¯\_ (ツ)_/¯. Ideally it wouldn't - it might give the impression that there is some sort of "trajectory" but we see here that just noise can create that illusion.
+From the above figure, we can see that PCA looks similar to the true dimensions. NMF (w/ data shifted up to be non-negative) honestly surprised me here... I don't have a good intuition for why adding noise, creates that elongated shape... ¯\\_ (ツ)_/¯. Ideally it wouldn't - it might give the impression that there is some sort of "trajectory" but we see here that just noise can create that illusion.
 
 When we look at the t-SNE and UMAP (default params), we find that they create the appearance of structure from random Gaussian distributions, even when doing a 100 fold dimension reduction, knowing what the true dimensions are. We also see that as noise increases, this structure gets blurier (usurprising, we'll circle back to that). If you're not familiar with SOM, it might look strange, but it just places observations inside of a 2D grid, so that's why it looks uniform; overall it visually looks like it made something Gaussian-ish, but the grid pattern makes it a bit harder to interpret.
 
@@ -52,6 +54,28 @@ How well do they recapitulate the original observation:observation distances? Th
 ![Distance Correlations](assets/distance_correlations.png)
 
 Unsurprisingly in this case, PCA is bang on, followed by NMF, which has a heteroscedastic pattern, meaning that it preserves very nearby structure a bit better than global. tSNE and UMAP have similar strange patterns and small areas (that likely correspond to the 'cluster' looking structures), which decrease the quality of the conservation of distances. SOM was interesting here, because just looking at the 2D projection, it seemed like it somewhat captured the Gaussian like structure. But when we look at the actual distances, we see that which point ended up where within that Gaussian like grid pattern didn't necessarily match up, as it had the least conservation of distances.
+
+### 2 "real" dimensions structure (2-clusters) in one of them
+
+What about when we _do_ have a some structure? We hypothesized that the "real" structure would indeed be observed, but that within each cluster, we may see a similar "craggly" pattern of overfitting.
+
+First, let's look at the input data, so we understand the input:
+
+![Heatmap and Scatters clust](assets/heatmap_and_scatters_4separation.png)
+
+There are again only 2 'real' dimensions, but one includes a gap for half of the observations, creating 2 clusers. Again, also with increasing noise added (which is equivalent to adding a unique dimension of varing magnitude within each feature):
+
+Now, let's see how they all actually look:
+
+![True Dimensions vs Dimension Reduction clust](assets/true_dims_with_noise_vs_dim_reduction_4separation.png)
+
+We do of course see the two clusters in the dim reductions (except for SOM, which appears to struggle here). PCA and NMF seem to do a good job regardless of the noise regime. tSNE and UMAP have the same neighbor overfitting issues as before until the noise becomes larger than the signal. 
+
+The reason that this seems to help is that the noise dimensions are all orthogonal to each other, so that the 'neighbor signal' coming from the noisy orthogonal dimensions are all in random unrelated directions. So by the central limit theorum, we can think of this as adding a smoothing function because, if the 'neighbor signal' is receiving noise in many random directions, ultimately, the overfitting in the 'real' dimensions, gets washed out by the unique & orthogonal overfitting in the 'noise' dimensions. In fact for tSNE & UMAP, it's not until you hit a 25% noise ratio that the 'real' clusters become quite clear (but still with apparent overfit local structures within the clusters).
+
+Does this mean that I should just add some noise to my data & then it's fine? No. It's important to remember here that what we're calling noise and signal in simulations is somewhat arbitrary. If we keep adding more and more noise, all of the apparent structure will get progressively more drowned out. But we don't have an objective function to know that is 'real' signal & what is 'noise' signal, or technical variability in our measures, etc. To tackle those problems, you'll have to know what the noise sources are, and try to correct for them explicitly.
+
+
 
 ## Conclusion
 
